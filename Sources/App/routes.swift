@@ -3,13 +3,33 @@ import Vapor
 /// Register your application's routes here.
 public func routes(_ router: Router) throws {
     // Basic "Hello, world!" example
-    router.get("hello") { req in
-        return "Hello, world!"
+    router.get("hello", String.parameter) { req -> String in
+        let name = try req.parameters.next() as String
+        return "Hello, \(name)!"
+    }
+    
+    struct JSONExample: Content {
+        let name: String
+        let age: Int
+        let birthday: Date
+    }
+    
+    router.get("json") { req -> JSONExample in
+        return JSONExample(
+            name: "Hello",
+            age: 28,
+            birthday: Date()
+        )
     }
 
     // Example of configuring a controller
     let todoController = TodoController()
-    router.get("todos", use: todoController.index)
-    router.post("todos", use: todoController.create)
-    router.delete("todos", Todo.parameter, use: todoController.delete)
+    let todos = router.grouped("todos")
+    let todo = todos.grouped(Todo.parameter)
+    todos.get(use: todoController.index)
+    todo.get(use: todoController.view)
+    todos.post(use: todoController.create)
+    todo.patch(use: todoController.update)
+    todos.delete(use: todoController.clear)
+    todo.delete(use: todoController.delete)
 }
